@@ -2,46 +2,29 @@ package com.example.finalproject0;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.ProgressDialog;
+
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.Request;
-import com.android.volley.VolleyError;
 
-//import org.jsoup.Jsoup;
-//import org.jsoup.nodes.Document;
-//import org.jsoup.nodes.Element;
-
-import android.os.AsyncTask;
-
-import org.json.JSONArray;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import Jama.Matrix;
 
 public class MainActivity extends AppCompatActivity {
 
 
-//    ProgressDialog pd;
     public static TextView result;
     EditText area, bathroom, bedroom;
     Button calculate, moreHouse;
     double price;
-    double theta0 = 93.5730487, theta1 = 0.0707709889, theta2 = -4.36588035, theta3 = 20.285743, theta4 = 27.742016;
+    double[] theta = new double[5];
+    int a = getParameter(theta);
+    double theta0 = theta[0], theta1 = theta[1], theta2 = theta[2], theta3 = theta[3], theta4 = theta[4];
     int areaVal, bathroomVal, bedroomVal;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,86 +53,57 @@ public class MainActivity extends AppCompatActivity {
         moreHouse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                result.setText("000");
-//                new JsonTask().execute("https://www.homesearchil.com/results-gallery/?");
+//                result.setText(Arrays.toString(theta));
                 String website = "https://www.homesearchil.com/results-gallery/?";
                 clicked_button(website);
             }
         });
     }
+
     public void clicked_button(String url) {
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(url));
         startActivity(intent);
     }
 
+    public int getParameter(double[] theta) {
+        double[] area = new double[]{1359.0, 1790.0, 1433.0, 1418.0, 1723.0, 3158.0, 2713.0, 989.0, 2070.0, 2064.0, 1721.0, 3524.0, 1222.0, 1440.0, 4291.0, 1480.0, 1193.0, 2321.0, 1496.0, 1260.0};
+        double[] bds = new double[]{2, 4, 3, 3, 3, 6, 5, 3, 4, 4, 3, 5, 3, 4, 6, 3, 3, 4, 3, 4};
+        double[] bas = new double[]{2, 3, 2, 3, 4, 5, 4, 2, 4, 4, 2, 4, 2, 2, 4, 3, 1, 3, 2, 2};
+        double[] y = new double[]{175, 189, 155, 135, 259.9, 379.9, 239.9, 104.9, 220, 274.9, 185, 200, 135, 169.9, 389.9, 120, 139.9, 195, 125.5, 183.5};
+        int m = area.length;
+        int n = 4;
+        double[][] X = new double[m][n + 1];
+        for (int i = 0; i < m; i++) {
+            X[i][0] = 1;
+        }
+        for (int i = 0; i < m; i++) {
+            X[i][1] = area[i];
+        }
+        for (int i = 0; i < m; i++) {
+            X[i][2] = Math.sqrt(area[i]);
+        }
+        for (int i = 0; i < m; i++) {
+            X[i][3] = bds[i];
+        }
+        for (int i = 0; i < m; i++) {
+            X[i][4] = bas[i];
+        }
 
-//    private class JsonTask extends AsyncTask<String, String, String> {
-//
-//        protected void onPreExecute() {
-//            super.onPreExecute();
-//
-//            pd = new ProgressDialog(MainActivity.this);
-//            pd.setMessage("Please wait");
-//            pd.setCancelable(false);
-//            pd.show();
-//        }
-//
-//        protected String doInBackground(String... params) {
-//
-//
-//            HttpURLConnection connection = null;
-//            BufferedReader reader = null;
-//
-//            try {
-//                URL url = new URL(params[0]);
-//                connection = (HttpURLConnection) url.openConnection();
-//                connection.connect();
-//
-//
-//                InputStream stream = connection.getInputStream();
-//
-//                reader = new BufferedReader(new InputStreamReader(stream));
-//
-//                StringBuffer buffer = new StringBuffer();
-//                String line = "";
-//
-//                while ((line = reader.readLine()) != null) {
-//                    buffer.append(line+"\n");
-//                    Log.d("Response: ", "> " + line);   //here u ll get whole response...... :-)
-//
-//                }
-//
-//                return buffer.toString();
-//
-//
-//            } catch (MalformedURLException e) {
-//                e.printStackTrace();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            } finally {
-//                if (connection != null) {
-//                    connection.disconnect();
-//                }
-//                try {
-//                    if (reader != null) {
-//                        reader.close();
-//                    }
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            return null;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(String result0) {
-//            super.onPostExecute(result0);
-//            if (pd.isShowing()){
-//                pd.dismiss();
-//            }
-//            result.setText(result0);
-//        }
-//    }
+        double[][] b = new double[m][1];
+        for (int i = 0; i < m; i++) {
+            b[i][0] = y[i];
+        }
+        Matrix bM = new Matrix(b);
+        Matrix XM = new Matrix(X);
+        Matrix XMT = XM.transpose();
+        Matrix lhs = XMT.times(XM);
+        Matrix rhs = XMT.times(bM);
+        Matrix x = lhs.solve(rhs);
 
+        for (int i = 0; i < 5; i++) {
+            theta[i] = x.get(i, 0);
+        }
+        return 0;
+    }
 }
